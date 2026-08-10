@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable">
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+  <Commands package="guidLocalAIDeveloperPackage">
+    <Groups>
+      <Group guid="guidLocalAIDeveloperCommandSet" id="LocalAIDeveloperGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS" />
+      </Group>
+    </Groups>
+    <Buttons>
+      <Button guid="guidLocalAIDeveloperCommandSet" id="OpenDeveloperCommand" priority="0x0100" type="Button">
+        <Parent guid="guidLocalAIDeveloperCommandSet" id="LocalAIDeveloperGroup" />
+        <Strings>
+          <ButtonText>LocalAI Developer</ButtonText>
+          <LocCanonicalName>Tools.LocalAIDeveloper</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidLocalAIDeveloperCommandSet" id="OpenSettingsCommand" priority="0x0110" type="Button">
+        <Parent guid="guidLocalAIDeveloperCommandSet" id="LocalAIDeveloperGroup" />
+        <Strings>
+          <ButtonText>LocalAI Developer Settings</ButtonText>
+          <LocCanonicalName>Tools.LocalAIDeveloperSettings</LocCanonicalName>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+  <Symbols>
+    <GuidSymbol name="guidLocalAIDeveloperPackage" value="{0A66A8F3-E67B-40E4-BC63-09D3984261C3}" />
+    <GuidSymbol name="guidLocalAIDeveloperCommandSet" value="{6C40537E-31EF-4E96-AB23-697CB30DB96C}">
+      <IDSymbol name="LocalAIDeveloperGroup" value="0x1020" />
+      <IDSymbol name="OpenDeveloperCommand" value="0x0100" />
+      <IDSymbol name="OpenSettingsCommand" value="0x0101" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>

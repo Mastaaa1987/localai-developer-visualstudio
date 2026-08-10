@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Authors>LocalAI Developer contributors</Authors>
+    <Copyright>Copyright (c) 2026 LocalAI Developer contributors</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <NuGetAudit>false</NuGetAudit>
+    <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\LocalAI.Developer.Backend\LocalAI.Developer.Backend.csproj" />
+  </ItemGroup>
+</Project>
