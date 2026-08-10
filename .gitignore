@@ -427,3 +427,12 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Personal Addition
+TestResults/
+*.userosscache
+*.sln.docstates
+*.nupkg
+*.snupkg
+artifacts/
+*.vsix
