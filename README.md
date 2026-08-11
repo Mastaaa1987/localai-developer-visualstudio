@@ -1,6 +1,7 @@
 # LocalAI Developer for Visual Studio 2022
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
+[![Visual Studio 2022](https://img.shields.io/badge/Visual%20Studio-2022-5C2D91.svg)](https://marketplace.visualstudio.com/)
 
 LocalAI Developer is a Visual Studio 2022 extension for AI-assisted software development with local or remote language models. It turns a development goal into a reviewable plan, generates one patch at a time, validates C# with Roslyn, builds the solution once at the end of the workflow, and can request bounded repair patches when compilation fails.
 
@@ -13,6 +14,8 @@ The extension supports English and German and follows the active Visual Studio c
 - Manual approval, skip, cancel, and rollback actions
 - Atomic transaction history, including rollback of completed workflows
 - Roslyn syntax validation before patch approval
+- Language-aware context resolution and preflight validation for C#, Python, PHP,
+  JavaScript, TypeScript, JSON, XML/XAML, HTML, and CSS
 - Deferred solution compilation after the final relevant step
 - Bounded automatic repair and recompilation
 - Persistent developer sessions and structured history
@@ -50,6 +53,35 @@ LocalAI Developer Backend (.NET 8)
 ```
 
 The Visual Studio extension is a UI host. Workflow state and filesystem mutations live in the backend so approval, execution, compilation, repair, and persistence remain separated.
+
+## Language analysis
+
+The context resolver starts with each plan step's explicit targets, adds nearby
+project manifests, and builds a transitive dependency graph before applying
+heuristic ranking. It follows Python imports, Composer PSR-4 and PHP includes,
+JavaScript/TypeScript imports and path aliases, C# namespaces and referenced
+types, MSBuild project items, XAML code-behind links, HTML assets, and CSS
+imports. Context selection remains bounded by the active provider's file and
+token budgets. Dependencies that do not fit are listed explicitly in the
+request as omitted, so the model can request a narrower follow-up step.
+
+- C#: Roslyn syntax and declaration context, followed by the selected solution or project build
+- Python: fixed `python -m py_compile` validation when Python is installed
+- PHP: fixed `php -l` validation when PHP is installed
+- JavaScript: fixed `node --check` validation when Node.js is installed
+- TypeScript: fixed `tsc --noEmit` validation when TypeScript is installed
+- JSON/JSONC: `System.Text.Json`
+- XML, XAML, project files, props, targets, config, and RESX: `System.Xml.Linq`
+- HTML and CSS-family files: deterministic structural validation
+
+External validation commands are selected by registered backends. Model output
+can never provide an executable or arbitrary command-line arguments.
+If an optional interpreter cannot start or does not finish its syntax check
+within the validator timeout, LocalAI Developer falls back to deterministic
+structural validation. An internal validator timeout is not treated as a user
+cancellation and cannot mark an unapplied patch as retained.
+Windows App Execution Alias messages such as "Python was not found" are treated
+as unavailable validator infrastructure, never as source-code syntax errors.
 
 ## Repository Layout
 
@@ -110,6 +142,8 @@ src/LocalAI.Developer.VisualStudio/bin/Release/LocalAI.Developer.VisualStudio.vs
 
 Restart Visual Studio and open **Tools > LocalAI Developer**.
 
+Marketplace publication metadata is included in [vs-publish.json](vs-publish.json). The first upload is configured as a private listing so it can be verified before public release; see [MARKETPLACE.md](MARKETPLACE.md).
+
 ## Configuration
 
 Open **Tools > LocalAI Developer Settings** to configure provider URLs, models, API keys, language, approval mode, timeouts, and Git policy. Use **Load models** beside the editable model dropdown to discover models from the selected provider. The same dialog lets you add, rename, and remove custom providers. API keys are protected with Windows DPAPI for the current user.
@@ -140,6 +174,8 @@ English and German are included. Select the language under **Tools > LocalAI Dev
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and pull-request checklist.
+
+Security and privacy concerns can be reported through the [GitHub issue tracker](https://github.com/Mastaaa1987/localai-developer-visualstudio/issues). See [PRIVACY.md](PRIVACY.md) for details about project context, provider requests, credentials, and local session storage.
 
 ## License
 

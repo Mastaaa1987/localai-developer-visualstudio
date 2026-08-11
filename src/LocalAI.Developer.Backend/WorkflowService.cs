@@ -14,6 +14,10 @@ public sealed class WorkflowService(
     private readonly BudgetService _budgets = new();
     private readonly ContextProfile _profile = ContextProfileResolver.Resolve(
         settings.ProviderName, settings.Model);
+    private readonly CodeAnalysisService _codeAnalysis = new(settings, roslyn);
+    private readonly CodeContextResolver _contextResolver = new(
+        settings, workspace, new CodeAnalysisService(settings, roslyn),
+        ContextProfileResolver.Resolve(settings.ProviderName, settings.Model).MaximumContextFiles);
 
     public async Task<DevelopmentSession> CreatePlanAsync(
         string goal, CancellationToken cancellationToken)
@@ -155,7 +159,7 @@ public sealed class WorkflowService(
                     step.Status = StepStatuses.GeneratingPatch;
                     Log(session, "patch", $"Generating patch for {step.Title}.");
                     await CheckpointAsync(session);
-                    var context = workspace.Describe(step.Targets, roslyn);
+                    var context = _contextResolver.Resolve(step.Targets, step.Description);
                     UpdateBudget(session, step.Description, context);
                     Log(session, "llm", $"Waiting for {settings.ProviderName} to generate " +
                         $"the patch (timeout: {settings.LlmRequestTimeoutSeconds} seconds).");
@@ -179,15 +183,20 @@ public sealed class WorkflowService(
             {
                 try { await git.UnstageAsync(session, applied, CancellationToken.None); }
                 catch { }
-                MarkAppliedTransactionsFailed(session);
+                var retainedChanges = applied.Count > 0;
+                if (retainedChanges) MarkAppliedTransactionsFailed(session);
                 applied.Clear();
                 return await FailAsync(session, step, error.Message +
-                    " Applied changes were retained for inspection and require manual rollback.");
+                    (retainedChanges
+                        ? " Applied changes were retained for inspection and require manual rollback."
+                        : " No changes were applied."));
             }
         }
 
-        var finalCompilation = await roslyn.CompileAsync(
-            CompilationKinds.Validation, null, cancellationToken);
+        var changedPaths = session.ActiveTransaction.SelectMany(patch => patch.Files)
+            .Select(file => file.Path).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var finalCompilation = await ValidateAndCompileAsync(
+            CompilationKinds.Validation, changedPaths, cancellationToken);
         Log(session, "compile", "Final validation compilation completed.", finalCompilation);
         var finalRepairStep = session.Plan.Steps.LastOrDefault(step =>
             step.Kind != "validation" && step.Status == StepStatuses.Completed);
@@ -206,7 +215,7 @@ public sealed class WorkflowService(
                 .Select(file => file.Path).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             var repairTargets = finalRepairStep.Targets.Concat(changed)
                 .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-            var context = workspace.Describe(repairTargets, roslyn);
+            var context = _contextResolver.Resolve(repairTargets, finalRepairStep.Description);
             UpdateBudget(session, finalRepairStep.Description + finalCompilation.Output, context);
             var repairStep = new DevelopmentStep
             {
@@ -239,8 +248,10 @@ public sealed class WorkflowService(
             session.ActiveTransaction.Add(repair);
             RecordTransaction(session, finalRepairStep, repair);
             finalRepairStep.Status = StepStatuses.Completed;
-            finalCompilation = await roslyn.CompileAsync(
-                CompilationKinds.Validation, null, cancellationToken);
+            changedPaths = session.ActiveTransaction.SelectMany(patch => patch.Files)
+                .Select(file => file.Path).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            finalCompilation = await ValidateAndCompileAsync(
+                CompilationKinds.Validation, changedPaths, cancellationToken);
             Log(session, "compile", "Final validation compilation completed.", finalCompilation);
         }
         if (!finalCompilation.Success)
@@ -440,11 +451,18 @@ public sealed class WorkflowService(
     public BudgetSnapshot CalculateBudget(string prompt, string context) =>
         _budgets.Calculate(_profile, prompt, context);
 
-    private PreparedPatch Prepare(DevelopmentSession session, PatchDocument patch,
+    private PreparedPatch Prepare(PatchDocument patch,
         DevelopmentStep step, string kind)
     {
         var prepared = workspace.Prepare(patch, step.Id, step.Risk);
         prepared.Kind = kind;
+        return prepared;
+    }
+
+    private void RecordGeneratedPatch(
+        DevelopmentSession session, DevelopmentStep step, PreparedPatch prepared)
+    {
+        var kind = prepared.Kind;
         History(session, kind == "Repair" ? "RepairPatchGenerated" : "PatchGenerated",
             $"Generated {prepared.Files.Count} file change(s).", prepared);
         _ = notify("patchPreview", new
@@ -452,7 +470,6 @@ public sealed class WorkflowService(
             stepTitle = step.Title,
             preview = workspace.Preview(prepared)
         });
-        return prepared;
     }
 
     private async Task<PreparedPatch> GeneratePreparedPatchAsync(
@@ -467,8 +484,9 @@ public sealed class WorkflowService(
                 requestContext, cancellationToken);
             try
             {
-                var prepared = Prepare(session, workspace.ParsePatch(raw), step, "Patch");
-                ValidatePreparedSyntax(prepared);
+                var prepared = Prepare(workspace.ParsePatch(raw), step, "Patch");
+                await ValidatePreparedSyntaxAsync(prepared, cancellationToken);
+                RecordGeneratedPatch(session, step, prepared);
                 return prepared;
             }
             catch (Exception error) when (attempt < maximumAttempts &&
@@ -502,8 +520,9 @@ public sealed class WorkflowService(
                 requestContext, compilation, cancellationToken);
             try
             {
-                var prepared = Prepare(session, workspace.ParsePatch(raw), step, "Repair");
-                ValidatePreparedSyntax(prepared);
+                var prepared = Prepare(workspace.ParsePatch(raw), step, "Repair");
+                await ValidatePreparedSyntaxAsync(prepared, cancellationToken);
+                RecordGeneratedPatch(session, step, prepared);
                 return prepared;
             }
             catch (Exception error) when (error is InvalidOperationException or
@@ -528,18 +547,43 @@ public sealed class WorkflowService(
             lastError);
     }
 
-    private void ValidatePreparedSyntax(PreparedPatch patch)
+    private async Task ValidatePreparedSyntaxAsync(
+        PreparedPatch patch, CancellationToken cancellationToken)
     {
-        var errors = patch.Files
-            .Where(file => file.Operation != "delete" &&
-                           file.Path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
-            .SelectMany(file => roslyn.AnalyzeContent(file.Path, file.Content))
-            .Where(item => item.Severity == "Error")
+        var errors = (await _codeAnalysis.ValidatePatchAsync(patch, cancellationToken))
+            .Where(item => item.Severity.Equals("Error", StringComparison.OrdinalIgnoreCase))
             .Take(12).ToArray();
         if (errors.Length == 0) return;
-        throw new InvalidOperationException("Generated C# syntax is invalid: " +
+        throw new InvalidOperationException("Generated code validation failed: " +
             string.Join(" | ", errors.Select(item =>
-                $"{item.Path}({item.Line},{item.Column}) {item.Id}: {item.Message}")));
+                $"{item.BackendId}: {item.Path}({item.Line},{item.Column}) " +
+                $"{item.Code}: {item.Message}")));
+    }
+
+    private async Task<CompilationResult> ValidateAndCompileAsync(
+        string kind, IEnumerable<string> changed, CancellationToken cancellationToken)
+    {
+        var paths = changed.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var diagnostics = (await _codeAnalysis.ValidateFilesAsync(paths, cancellationToken))
+            .ToList();
+        var errors = diagnostics.Where(item =>
+            item.Severity.Equals("Error", StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (errors.Length > 0)
+            return new CompilationResult
+            {
+                Success = false, Kind = kind, ExitCode = 1,
+                Backend = "LanguageValidation",
+                Diagnostics = diagnostics,
+                Output = string.Join(Environment.NewLine, errors.Select(item =>
+                    $"{item.Path}({item.Line},{item.Column}): {item.BackendId} " +
+                    $"{item.Code}: {item.Message}"))
+            };
+
+        var result = await roslyn.CompileAsync(kind, paths, cancellationToken);
+        result.Diagnostics.AddRange(diagnostics);
+        result.Backend = diagnostics.Count == 0
+            ? result.Backend : "LanguageValidation+" + result.Backend;
+        return result;
     }
 
     private async Task<bool> AwaitApprovalAsync(DevelopmentSession session,
@@ -576,7 +620,7 @@ public sealed class WorkflowService(
         step.Status = StepStatuses.Compiling;
         SetStatus(session, SessionStatuses.Compiling, $"{kind}: {step.Title}");
         await CheckpointAsync(session);
-        var result = await roslyn.CompileAsync(kind, changed, cancellationToken);
+        var result = await ValidateAndCompileAsync(kind, changed, cancellationToken);
         Log(session, "compile", $"{kind} finished.", result);
         History(session, result.Success ? "CompilationSucceeded" : "CompilationFailed",
             $"{kind} finished.", result);

@@ -7,9 +7,25 @@ namespace LocalAI.Developer.Backend;
 
 public sealed class WorkspaceService(BackendSettings settings)
 {
+    private static readonly HashSet<string> ContextExtensions = new(
+        StringComparer.OrdinalIgnoreCase)
+    {
+        ".cs", ".csproj", ".sln", ".slnx", ".xaml", ".xml", ".props", ".targets",
+        ".config", ".resx", ".json", ".jsonc", ".js", ".jsx", ".mjs", ".cjs",
+        ".ts", ".tsx", ".py", ".pyi", ".pyw", ".php", ".phtml", ".html", ".htm",
+        ".css", ".scss", ".less",
+        ".yaml", ".yml", ".toml", ".md", ".asmdef"
+    };
+    private static readonly HashSet<string> ContextFileNames = new(
+        StringComparer.OrdinalIgnoreCase)
+    {
+        ".editorconfig", ".gitignore", "Pipfile", "requirements.txt", "setup.cfg"
+    };
     private static readonly HashSet<string> Blocked = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".git", "Library", "Temp", "obj", "bin", ".unityai-vscode", "node_modules"
+        ".git", "Library", "Temp", "obj", "bin", ".unityai-vscode", "node_modules",
+        "env", ".venv", "venv", "site-packages", "__pycache__", ".mypy_cache",
+        ".pytest_cache", ".ruff_cache", ".tox"
     };
 
     public string Normalize(string value)
@@ -42,6 +58,8 @@ public sealed class WorkspaceService(BackendSettings settings)
         return File.Exists(path) ? File.ReadAllText(path) : null;
     }
 
+    public string Root => settings.WorkspaceRoot;
+
     public string Describe(IEnumerable<string> paths, RoslynBackend roslyn)
     {
         var entries = paths.Distinct(StringComparer.OrdinalIgnoreCase).Select(relative =>
@@ -63,14 +81,17 @@ public sealed class WorkspaceService(BackendSettings settings)
 
     public string WorkspaceSummary(int maximumFiles = 400)
     {
-        return string.Join('\n', Directory.EnumerateFiles(settings.WorkspaceRoot, "*",
-                SearchOption.AllDirectories)
-            .Where(path => !ContainsBlockedSegment(path))
-            .Where(path => new[] { ".cs", ".js", ".json", ".csproj", ".sln", ".asmdef", ".md" }
-                .Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
-            .Take(maximumFiles)
-            .Select(path => Path.GetRelativePath(settings.WorkspaceRoot, path).Replace('\\', '/')));
+        return string.Join('\n', EnumerateContextFiles(maximumFiles));
     }
+
+    public IEnumerable<string> EnumerateContextFiles(int maximumFiles) =>
+        Directory.EnumerateFiles(settings.WorkspaceRoot, "*", SearchOption.AllDirectories)
+            .Where(path => !ContainsBlockedSegment(
+                Path.GetRelativePath(settings.WorkspaceRoot, path)))
+            .Where(path => ContextExtensions.Contains(Path.GetExtension(path)) ||
+                           ContextFileNames.Contains(Path.GetFileName(path)))
+            .Take(maximumFiles)
+            .Select(path => Path.GetRelativePath(settings.WorkspaceRoot, path).Replace('\\', '/'));
 
     public PatchDocument ParsePatch(JsonObject value)
     {

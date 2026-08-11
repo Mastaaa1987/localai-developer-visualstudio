@@ -207,6 +207,7 @@ public sealed class CompilationResult
     public long DurationMs { get; set; }
     public string Backend { get; set; } = "Roslyn+Build";
     public List<RoslynDiagnostic> RoslynDiagnostics { get; set; } = [];
+    public List<CodeDiagnostic> Diagnostics { get; set; } = [];
 }
 
 public sealed class RoslynDiagnostic

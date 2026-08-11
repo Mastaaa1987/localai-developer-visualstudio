@@ -58,8 +58,8 @@ public sealed class RoslynBackend(BackendSettings settings)
                     Skipped = true,
                     Kind = kind,
                     ExitCode = 0,
-                    Output = "Compilation skipped: No .sln, .slnx or .csproj " +
-                             $"exists below workspace root: {settings.WorkspaceRoot}",
+                    Output = "Compilation skipped: No buildable C# project exists " +
+                             $"below workspace root: {settings.WorkspaceRoot}",
                     DurationMs = started.ElapsedMilliseconds,
                     Backend = "RoslynSyntax+RoslynBuild",
                     RoslynDiagnostics = roslynDiagnostics
@@ -101,7 +101,7 @@ public sealed class RoslynBackend(BackendSettings settings)
         var infrastructureFailure = IsInfrastructureFailure(output);
         return new CompilationResult
         {
-            Success = process.ExitCode == 0,
+            Success = process.ExitCode == 0 && !infrastructureFailure,
             InfrastructureFailure = infrastructureFailure,
             BuildTarget = buildTarget,
             Kind = kind,
@@ -127,6 +127,7 @@ public sealed class RoslynBackend(BackendSettings settings)
     {
         var rootSolutions = EnumerateTopLevel(settings.WorkspaceRoot, "*.slnx")
             .Concat(EnumerateTopLevel(settings.WorkspaceRoot, "*.sln"))
+            .Where(SolutionContainsCSharpProject)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray();
         if (rootSolutions.Length > 0) return rootSolutions[0];
 
@@ -143,6 +144,7 @@ public sealed class RoslynBackend(BackendSettings settings)
 
         var nestedSolutions = EnumerateBuildFiles("*.slnx")
             .Concat(EnumerateBuildFiles("*.sln"))
+            .Where(SolutionContainsCSharpProject)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray();
         if (nestedSolutions.Length == 1) return nestedSolutions[0];
 
@@ -172,6 +174,17 @@ public sealed class RoslynBackend(BackendSettings settings)
         Directory.EnumerateFiles(settings.WorkspaceRoot, pattern, SearchOption.AllDirectories)
             .Where(path => !IsGeneratedDirectory(path));
 
+    private static bool SolutionContainsCSharpProject(string path)
+    {
+        try
+        {
+            return File.ReadAllText(path).Contains(
+                ".csproj", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (IOException) { return false; }
+        catch (UnauthorizedAccessException) { return false; }
+    }
+
     private static IEnumerable<string> EnumerateTopLevel(string directory, string pattern) =>
         Directory.Exists(directory)
             ? Directory.EnumerateFiles(directory, pattern, SearchOption.TopDirectoryOnly)
@@ -189,7 +202,9 @@ public sealed class RoslynBackend(BackendSettings settings)
     private static bool IsInfrastructureFailure(string output) =>
         output.Contains("MSB1003", StringComparison.OrdinalIgnoreCase) ||
         output.Contains("Specify a project or solution file", StringComparison.OrdinalIgnoreCase) ||
-        output.Contains("Projekt- oder Projektmappendatei", StringComparison.OrdinalIgnoreCase);
+        output.Contains("Projekt- oder Projektmappendatei", StringComparison.OrdinalIgnoreCase) ||
+        output.Contains("Unable to find a project to restore", StringComparison.OrdinalIgnoreCase) ||
+        output.Contains("Kein Projekt zum Wiederherstellen", StringComparison.OrdinalIgnoreCase);
 
     public string BuildSemanticContext(IEnumerable<string> relativePaths)
     {

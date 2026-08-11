@@ -51,6 +51,7 @@ namespace LocalAI.Developer.VisualStudio
                 ["PatchPreview"] = Pair("Patch preview", "Patch-Vorschau"),
                 ["WorkflowLog"] = Pair("Workflow log", "Workflow-Log"),
                 ["DeveloperHistory"] = Pair("Developer history", "Developer-Verlauf"),
+                ["Transactions"] = Pair("Transactions", "Transaktionen"),
                 ["NotConnected"] = Pair("Backend is not connected.", "Backend ist noch nicht verbunden."),
                 ["LanguageChanged"] = Pair("Language changed to English.", "Sprache auf Deutsch geändert."),
                 ["BrowseFilter"] = Pair("Visual Studio solution (*.sln;*.slnx)|*.sln;*.slnx|All files (*.*)|*.*",
@@ -87,6 +88,8 @@ namespace LocalAI.Developer.VisualStudio
                 ,["ProgressNone"] = Pair("Plan progress: no plan", "Planfortschritt: kein Plan")
                 ,["Progress"] = Pair("Plan progress: {0}/{1} completed{2}", "Planfortschritt: {0}/{1} abgeschlossen{2}")
                 ,["NoTransactionFile"] = Pair("No existing file is available for this transaction.", "Für diese Transaktion ist keine vorhandene Datei verfügbar.")
+                ,["NoTransactionsRecorded"] = Pair("No transactions were recorded for this session.", "Für diese Session wurden keine Transaktionen gespeichert.")
+                ,["TransactionCreated"] = Pair("Created", "Erstellt")
                 ,["PathOutsideWorkspace"] = Pair("The transaction path is outside the workspace.", "Der Transaktionspfad liegt außerhalb des Arbeitsordners.")
                 ,["TimeoutRange"] = Pair("The model timeout must be between 30 and 3600 seconds.", "Das Modell-Timeout muss zwischen 30 und 3600 Sekunden liegen.")
                 ,["SettingsTitle"] = Pair("LocalAI Developer Settings", "LocalAI Developer Einstellungen")

@@ -11,6 +11,12 @@ var tests = new List<(string Name, Action Run)>
     ("safe transactional patch", TestPatch),
     ("completed transaction rollback", TestCompletedTransactionRollback),
     ("Roslyn syntax diagnostics", TestRoslyn),
+    ("multi-language context resolution", TestMultiLanguageContext),
+    ("transitive project dependency graph", TestTransitiveDependencyGraph),
+    ("multi-language syntax validation", () =>
+        TestMultiLanguageValidation().GetAwaiter().GetResult()),
+    ("missing interpreter is infrastructure", TestMissingInterpreterMessage),
+    ("project Python environment resolution", TestProjectPythonInterpreterResolution),
     ("JSON-RPC backend dispatch", TestJsonRpc),
     ("provider transport and model discovery", () => TestProviders().GetAwaiter().GetResult()),
     ("malformed model JSON escape repair", () => TestMalformedModelJsonEscape().GetAwaiter().GetResult()),
@@ -25,6 +31,8 @@ var tests = new List<(string Name, Action Run)>
         TestAmbiguousReplaceRegeneration().GetAwaiter().GetResult()),
     ("invalid C# syntax regenerates before approval", () =>
         TestInvalidSyntaxRegeneration().GetAwaiter().GetResult()),
+    ("preflight failure applies no changes", () =>
+        TestPreflightFailureAppliesNothing().GetAwaiter().GetResult()),
     ("all transactions rollback atomically", () =>
         TestRollbackAllTransactions().GetAwaiter().GetResult())
 };
@@ -182,6 +190,189 @@ static void TestRoslyn()
     finally { DeleteTree(root); }
 }
 
+static void TestMultiLanguageContext()
+{
+    var root = Path.Combine(Path.GetTempPath(), "localai-context-" +
+        Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(Path.Combine(root, "app"));
+    Directory.CreateDirectory(Path.Combine(root, "node_modules"));
+    Directory.CreateDirectory(Path.Combine(root, "env", "Lib", "site-packages"));
+    try
+    {
+        File.WriteAllText(Path.Combine(root, "pyproject.toml"), "[project]\nname='probe'");
+        File.WriteAllText(Path.Combine(root, "app", "main.py"),
+            "from helper import format_name\nprint(format_name('test'))");
+        File.WriteAllText(Path.Combine(root, "app", "helper.py"),
+            "from repository import normalize\ndef format_name(value):\n    return normalize(value).title()");
+        File.WriteAllText(Path.Combine(root, "app", "repository.py"),
+            "def normalize(value):\n    return value.strip()");
+        File.WriteAllText(Path.Combine(root, "app", "page.html"),
+            "<html><body>probe</body></html>");
+        File.WriteAllText(Path.Combine(root, "node_modules", "ignored.js"), "broken(");
+        File.WriteAllText(Path.Combine(root, "env", "Lib", "site-packages", "ignored.py"),
+            new string('x', 100_000));
+        var settings = new BackendSettings { WorkspaceRoot = root };
+        var workspace = new WorkspaceService(settings);
+        var analysis = new CodeAnalysisService(settings, new RoslynBackend(settings));
+        var resolver = new CodeContextResolver(settings, workspace, analysis, 8);
+
+        var summary = workspace.WorkspaceSummary();
+        True(summary.Contains("app/main.py"), "Python was omitted from workspace summary.");
+        True(summary.Contains("app/page.html"), "HTML was omitted from workspace summary.");
+        True(!summary.Contains("node_modules"), "Blocked dependency directory leaked into context.");
+        True(!summary.Contains("site-packages") && !summary.Contains("ignored.py"),
+            "Python virtual environment leaked into context.");
+
+        var context = resolver.Resolve(["app/main.py"], "Update the application");
+        True(context.Contains("app/main.py"), "Explicit Python target was omitted.");
+        True(context.Contains("app/helper.py"), "Related Python module was not resolved.");
+        True(context.Contains("app/repository.py"),
+            "Transitive Python dependency was not resolved.");
+        True(context.Contains("pyproject.toml"), "Nearby Python manifest was not resolved.");
+        True(context.Contains("BACKEND Python"), "Python analysis context was not generated.");
+        var pythonGraph = new ProjectDependencyGraph(settings, workspace)
+            .ResolveTransitive(["app/main.py"], 20);
+        True(pythonGraph.OrderedPaths.Contains("app/repository.py",
+                StringComparer.OrdinalIgnoreCase),
+            "Python dependency graph did not follow imports transitively.");
+    }
+    finally { DeleteTree(root); }
+}
+
+static void TestTransitiveDependencyGraph()
+{
+    var root = Path.Combine(Path.GetTempPath(), "localai-graph-" +
+        Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(Path.Combine(root, "src", "Service"));
+    Directory.CreateDirectory(Path.Combine(root, "web"));
+    try
+    {
+        File.WriteAllText(Path.Combine(root, "composer.json"),
+            "{\"autoload\":{\"psr-4\":{\"App\\\\\":\"src/\"}}}");
+        File.WriteAllText(Path.Combine(root, "src", "Controller.php"),
+            "<?php namespace App; use App\\Service\\UserService; class Controller {}");
+        File.WriteAllText(Path.Combine(root, "src", "Service", "UserService.php"),
+            "<?php namespace App\\Service; class UserService {}");
+
+        File.WriteAllText(Path.Combine(root, "tsconfig.json"),
+            "{\"compilerOptions\":{\"baseUrl\":\".\",\"paths\":{\"@app/*\":[\"web/*\"]}}}");
+        File.WriteAllText(Path.Combine(root, "web", "main.ts"),
+            "import { service } from '@app/service';\nservice();");
+        File.WriteAllText(Path.Combine(root, "web", "service.ts"),
+            "import { Result } from './types';\nexport function service(): Result { return { ok: true }; }");
+        File.WriteAllText(Path.Combine(root, "web", "types.ts"),
+            "export interface Result { ok: boolean; }");
+
+        var settings = new BackendSettings { WorkspaceRoot = root };
+        var graph = new ProjectDependencyGraph(settings, new WorkspaceService(settings))
+            .ResolveTransitive(["src/Controller.php", "web/main.ts"], 20);
+        True(graph.OrderedPaths.Contains("src/Service/UserService.php",
+                StringComparer.OrdinalIgnoreCase),
+            "Composer PSR-4 dependency was not resolved.");
+        True(graph.OrderedPaths.Contains("web/service.ts", StringComparer.OrdinalIgnoreCase),
+            "TypeScript path alias was not resolved.");
+        True(graph.OrderedPaths.Contains("web/types.ts", StringComparer.OrdinalIgnoreCase),
+            "Transitive TypeScript import was not resolved.");
+        True(graph.Edges.Any(item => item.Kind == "composer-psr4"),
+            "Composer dependency edge was not recorded.");
+        True(graph.Edges.Any(item => item.Kind == "tsconfig-path"),
+            "TypeScript alias dependency edge was not recorded.");
+    }
+    finally { DeleteTree(root); }
+}
+
+static async Task TestMultiLanguageValidation()
+{
+    var root = Path.Combine(Path.GetTempPath(), "localai-validation-" +
+        Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(root);
+    try
+    {
+        var settings = new BackendSettings { WorkspaceRoot = root };
+        var analysis = new CodeAnalysisService(settings, new RoslynBackend(settings));
+        var invalid = new PreparedPatch
+        {
+            Files =
+            [
+                new PatchFile { Path = "broken.json", Operation = "create", Content = "{]" },
+                new PatchFile { Path = "broken.py", Operation = "create", Content = "def broken(:" },
+                new PatchFile { Path = "broken.php", Operation = "create",
+                    Content = "<?php function broken( {" },
+                new PatchFile { Path = "broken.html", Operation = "create",
+                    Content = "<html><body></html>" },
+                new PatchFile { Path = "broken.css", Operation = "create",
+                    Content = ".probe { color: red;" }
+            ]
+        };
+        var diagnostics = await analysis.ValidatePatchAsync(invalid, CancellationToken.None);
+        True(diagnostics.Any(item => item.Path == "broken.json"),
+            "Invalid JSON was accepted.");
+        True(diagnostics.Any(item => item.Path == "broken.py"),
+            "Invalid Python was accepted.");
+        True(diagnostics.Any(item => item.Path == "broken.php"),
+            "Invalid PHP was accepted.");
+        True(diagnostics.Any(item => item.Path == "broken.html"),
+            "Invalid HTML was accepted.");
+        True(diagnostics.Any(item => item.Path == "broken.css"),
+            "Invalid CSS was accepted.");
+
+        var valid = new PreparedPatch
+        {
+            Files =
+            [
+                new PatchFile { Path = "valid.json", Operation = "create",
+                    Content = "{\"enabled\":true}" },
+                new PatchFile { Path = "valid.py", Operation = "create",
+                    Content = "def value():\n    return 42\n" },
+                new PatchFile { Path = "valid.php", Operation = "create",
+                    Content = "<?php function value() { return 42; }" },
+                new PatchFile { Path = "valid.html", Operation = "create",
+                    Content = "<html><body><p>OK</p></body></html>" },
+                new PatchFile { Path = "valid.css", Operation = "create",
+                    Content = ".probe { color: red; }" }
+            ]
+        };
+        var validDiagnostics = await analysis.ValidatePatchAsync(valid, CancellationToken.None);
+        True(validDiagnostics.Count == 0,
+            "Valid multi-language files were rejected: " +
+            string.Join(" | ", validDiagnostics.Select(item => item.Message)));
+    }
+    finally { DeleteTree(root); }
+}
+
+static void TestMissingInterpreterMessage()
+{
+    True(ExternalToolAvailability.IsUnavailableOutput(
+            "Python wurde nicht gefunden; ohne Argumente ausführen, um aus dem Microsoft Store zu installieren"),
+        "German Windows Python alias message was treated as a syntax error.");
+    True(ExternalToolAvailability.IsUnavailableOutput(
+            "Python was not found; run without arguments to install from the Microsoft Store"),
+        "English Windows Python alias message was treated as a syntax error.");
+    True(!ExternalToolAvailability.IsUnavailableOutput(
+            "File \"main.py\", line 1\nSyntaxError: invalid syntax"),
+        "A real Python syntax error was treated as missing infrastructure.");
+}
+
+static void TestProjectPythonInterpreterResolution()
+{
+    var root = Path.Combine(Path.GetTempPath(), "localai-python-env-" +
+        Guid.NewGuid().ToString("N"));
+    var project = Path.Combine(root, "PythonApplication1");
+    var scripts = Path.Combine(project, "env", "Scripts");
+    Directory.CreateDirectory(scripts);
+    try
+    {
+        var executable = Path.Combine(scripts, "python.exe");
+        File.WriteAllText(executable, "test interpreter marker");
+        var resolved = PythonInterpreterResolver.ResolveProjectInterpreters(
+            root, "PythonApplication1/main.py");
+        True(resolved.Count > 0 && resolved[0].Equals(
+                executable, StringComparison.OrdinalIgnoreCase),
+            "Project-local env/Scripts/python.exe was not preferred.");
+    }
+    finally { DeleteTree(root); }
+}
+
 static async Task TestBuildTargetResolution()
 {
     var root = Path.Combine(Path.GetTempPath(), "unityai-build-target-" + Guid.NewGuid().ToString("N"));
@@ -215,6 +406,22 @@ static async Task TestBuildTargetResolution()
         }).CompileAsync(CompilationKinds.Validation, null, CancellationToken.None);
         True(missingTarget.Success && missingTarget.Skipped,
             "Compilation must be skipped when no solution or project exists.");
+
+        var pythonOnly = Path.Combine(root, "PythonOnly");
+        Directory.CreateDirectory(pythonOnly);
+        File.WriteAllText(Path.Combine(pythonOnly, "PythonOnly.sln"),
+            "Project(\"{888888A0-9F3D-457C-B088-3A5042F75D52}\") = \"PythonOnly\", \"PythonOnly.pyproj\", \"{11111111-1111-1111-1111-111111111111}\"\nEndProject");
+        File.WriteAllText(Path.Combine(pythonOnly, "main.py"), "print('ok')\n");
+        var pythonResult = await new RoslynBackend(new BackendSettings
+        {
+            WorkspaceRoot = pythonOnly,
+            CompileExecutable = "dotnet",
+            CompileArguments = ["build", "--nologo"]
+        }).CompileAsync(CompilationKinds.Validation,
+            [Path.Combine(pythonOnly, "main.py")], CancellationToken.None);
+        True(pythonResult.Success && pythonResult.Skipped &&
+             string.IsNullOrWhiteSpace(pythonResult.BuildTarget),
+            "A Python-only solution must not be passed to dotnet build.");
     }
     finally { DeleteTree(root); }
 }
@@ -506,6 +713,61 @@ static async Task TestInvalidSyntaxRegeneration()
         Equal(corrected, session.PendingPatch!.Files.Single().Content);
         Equal(0, responses.Count);
         Equal(original, File.ReadAllText(Path.Combine(root, "Probe.cs")));
+        Equal(1, session.History.Count(item => item.Type == "PatchGenerated"));
+    }
+    finally { DeleteTree(root); }
+}
+
+static async Task TestPreflightFailureAppliesNothing()
+{
+    var root = Path.Combine(Path.GetTempPath(), "localai-preflight-failure-" +
+        Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(root);
+    try
+    {
+        var settings = new BackendSettings
+        {
+            WorkspaceRoot = root, StorageDirectory = Path.Combine(root, "sessions"),
+            ProviderName = "LMStudio", Model = "test", BaseUrl = "http://fake/v1"
+        };
+        var invalid = JsonSerializer.Serialize(new
+        {
+            summary = "invalid", files = new[] { new
+            {
+                path = "broken.json", operation = "create",
+                expectedSha256 = "", content = "{]"
+            } }
+        });
+        var responses = new Queue<string>([invalid, invalid, invalid]);
+        var store = new SessionStore(settings);
+        var workflow = new WorkflowService(settings, new WorkspaceService(settings), store,
+            new LlmClient(settings, new HttpClient(new FakeLlmHandler(responses))),
+            new RoslynBackend(settings), new GitWorkflowService(settings),
+            (_, _) => Task.CompletedTask);
+        var session = new DevelopmentSession
+        {
+            Goal = "Reject invalid JSON", WorkspaceRoot = root,
+            Plan = new DevelopmentPlan
+            {
+                Steps = [new DevelopmentStep
+                {
+                    Id = "json", Order = 1, Title = "Create JSON",
+                    Description = "Create valid JSON", Kind = "patch", Risk = "low",
+                    Targets = ["broken.json"]
+                }]
+            }
+        };
+        await store.SaveAsync(session);
+        await workflow.RunAsync(session, false, CancellationToken.None);
+        Equal(SessionStatuses.Failed, session.Status);
+        True(!File.Exists(Path.Combine(root, "broken.json")),
+            "Preflight failure wrote a file.");
+        True(session.Transactions.Count == 0,
+            "Preflight failure created a transaction.");
+        True(session.Plan.Steps.Single().LastError.EndsWith("No changes were applied."),
+            "Preflight failure reported retained changes.");
+        True(session.History.All(item => item.Type != "PatchGenerated"),
+            "Rejected patches were recorded as generated patches.");
     }
     finally { DeleteTree(root); }
 }

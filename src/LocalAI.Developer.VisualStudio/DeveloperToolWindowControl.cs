@@ -41,6 +41,7 @@ namespace LocalAI.Developer.VisualStudio
         private readonly TextBox patchView = OutputField();
         private readonly TextBox logView = OutputField();
         private readonly TextBox historyView = OutputField();
+        private readonly TextBox transactionView = OutputField();
         private readonly ComboBox sessionSelector = new ComboBox { Margin = new Thickness(4), MinWidth = 260 };
         private readonly ComboBox transactionSelector = new ComboBox { Margin = new Thickness(4), MinWidth = 360 };
         private readonly CheckBox gitEnabled = Check("GitEnabled");
@@ -165,6 +166,7 @@ namespace LocalAI.Developer.VisualStudio
             tabs.Items.Add(Tab("PatchPreview", patchView));
             tabs.Items.Add(Tab("WorkflowLog", logView));
             tabs.Items.Add(Tab("DeveloperHistory", historyView));
+            tabs.Items.Add(Tab("Transactions", transactionView));
             Grid.SetRow(tabs, 1);
             root.Children.Add(tabs);
             return root;
@@ -813,15 +815,48 @@ namespace LocalAI.Developer.VisualStudio
                             item["details"].ToString(Formatting.Indented))));
             }
             string selectedTransaction = (transactionSelector.SelectedItem as TransactionChoice)?.Id;
+            JArray savedTransactions = value["transactions"] as JArray ?? new JArray();
             transactionSelector.Items.Clear();
-            foreach (JObject transaction in (value["transactions"] as JArray ?? new JArray()).OfType<JObject>())
+            foreach (JObject transaction in savedTransactions.OfType<JObject>())
                 transactionSelector.Items.Add(new TransactionChoice(transaction));
             transactionSelector.SelectedItem = transactionSelector.Items.Cast<TransactionChoice>()
                 .FirstOrDefault(item => item.Id == selectedTransaction) ??
                 transactionSelector.Items.Cast<object>().LastOrDefault();
+            transactionView.Text = BuildTransactionHistory(savedTransactions);
             UpdateRollbackButton();
             if ((string)value["status"] == "AwaitingApproval" && approvalWindow == null)
                 Dispatcher.BeginInvoke(new Action(ShowPatchApproval));
+        }
+
+        private static string BuildTransactionHistory(JArray transactions)
+        {
+            if (transactions == null || transactions.Count == 0)
+                return Localizer.Text("NoTransactionsRecorded");
+            var lines = new System.Collections.Generic.List<string>();
+            int number = 0;
+            foreach (JObject transaction in transactions.OfType<JObject>())
+            {
+                number++;
+                lines.Add(string.Format("{0}. {1} [{2}]", number,
+                    (string)transaction["title"] ?? (string)transaction["stepId"] ?? "Transaction",
+                    (string)transaction["status"] ?? "Unknown"));
+                lines.Add("   " + Localizer.Text("TransactionCreated") + ": " +
+                    ((DateTime?)transaction["createdAtUtc"] ?? DateTime.MinValue)
+                    .ToLocalTime().ToString("g"));
+                foreach (JObject patch in (transaction["patches"] as JArray ?? new JArray())
+                             .OfType<JObject>())
+                {
+                    foreach (JObject file in (patch["files"] as JArray ?? new JArray())
+                                 .OfType<JObject>())
+                    {
+                        lines.Add(string.Format("   {0}  {1}",
+                            ((string)file["operation"] ?? "update").ToUpperInvariant(),
+                            (string)file["path"] ?? ""));
+                    }
+                }
+                lines.Add("");
+            }
+            return string.Join(Environment.NewLine, lines).TrimEnd();
         }
 
         private void UpdateStepProgress(JObject plan)
