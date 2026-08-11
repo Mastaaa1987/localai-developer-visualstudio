@@ -1,5 +1,7 @@
 # LocalAI Developer for Visual Studio 2022
 
+![LocalAI Developer logo](assets/marketplace/localai-developer-logo-1024.png)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 [![Visual Studio 2022](https://img.shields.io/badge/Visual%20Studio-2022-5C2D91.svg)](https://marketplace.visualstudio.com/)
 

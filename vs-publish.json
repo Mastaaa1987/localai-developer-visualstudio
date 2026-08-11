@@ -4,6 +4,12 @@
     "coding",
     "build"
   ],
+  "assetFiles": [
+    {
+      "pathOnDisk": "src/LocalAI.Developer.VisualStudio/Resources/ExtensionIcon.png",
+      "targetPath": "images/localai-developer-logo.png"
+    }
+  ],
   "identity": {
     "internalName": "localai-developer-visualstudio"
   },

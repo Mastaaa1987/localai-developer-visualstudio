@@ -1,5 +1,7 @@
 # LocalAI Developer for Visual Studio 2022
 
+![LocalAI Developer logo](images/localai-developer-logo.png)
+
 LocalAI Developer brings reviewable AI-assisted development workflows directly into Visual Studio 2022. It can work with local providers such as LM Studio and Ollama as well as configured remote providers, while keeping patch approval, validation, rollback, and session history under your control.
 
 ## Highlights

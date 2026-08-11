@@ -7,6 +7,7 @@
     <MoreInfo>https://github.com/Mastaaa1987/localai-developer-visualstudio</MoreInfo>
     <License>LICENSE.txt</License>
     <ReleaseNotes>https://github.com/Mastaaa1987/localai-developer-visualstudio/blob/main/CHANGELOG.md</ReleaseNotes>
+    <Icon>Resources\ExtensionIcon.png</Icon>
     <Tags>Local AI, Visual Studio, Roslyn, Developer, Patch, LM Studio, Ollama, Mistral, OpenAI</Tags>
   </Metadata>
   <Installation>
