@@ -1,6 +1,6 @@
 # Visual Studio Marketplace release
 
-The Marketplace publisher ID is `localai-developer`. The VSIX identity ID must remain unchanged so installed versions receive updates correctly.
+The Marketplace publisher ID is `localai-developer` and its display name is `LocalAI Developer`. The publish manifest uses the publisher ID, while the VSIX manifest uses the matching Marketplace display name. The VSIX identity ID must remain unchanged so installed versions receive updates correctly.
 
 ## Build and test
 
