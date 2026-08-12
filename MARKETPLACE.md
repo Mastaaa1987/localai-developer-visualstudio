@@ -20,7 +20,7 @@ The Marketplace publisher ID is `localai-developer` and its display name is `Loc
 
 3. Install the Release VSIX locally and verify provider settings, model discovery, plan creation, patch review, transaction rollback, final validation, and session reload.
 
-The local development previews used a different manifest publisher value. Uninstall an installed 1.3.x preview before testing the Marketplace-ready 1.4.0 package to avoid side-by-side identity or update conflicts.
+The local development previews used a different manifest publisher value. Uninstall an installed 1.3.x preview before testing the Marketplace-ready 1.4.1 package to avoid side-by-side identity or update conflicts.
 
 ## First private upload
 

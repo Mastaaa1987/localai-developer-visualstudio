@@ -9,6 +9,8 @@ LocalAI Developer is a Visual Studio 2022 extension for AI-assisted software dev
 
 The extension supports English and German and follows the active Visual Studio color theme.
 
+![LocalAI Developer quick-start workflow](assets/marketplace/localai-developer-walkthrough.gif)
+
 ## Features
 
 - Structured development plans with step and plan status

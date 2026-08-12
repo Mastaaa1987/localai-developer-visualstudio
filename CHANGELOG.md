@@ -2,6 +2,12 @@
 
 All notable changes to LocalAI Developer are documented in this file.
 
+## 1.4.1 - 2026-08-12
+
+- Added the final LocalAI Developer logo to the VSIX and Marketplace metadata.
+- Added an animated English quick-start walkthrough to the Marketplace overview.
+- Updated Marketplace publisher metadata and release documentation.
+
 ## 1.4.0 - 2026-08-11
 
 - Prepared the extension for Visual Studio Marketplace distribution.

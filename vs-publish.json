@@ -8,6 +8,10 @@
     {
       "pathOnDisk": "src/LocalAI.Developer.VisualStudio/Resources/ExtensionIcon.png",
       "targetPath": "images/localai-developer-logo.png"
+    },
+    {
+      "pathOnDisk": "assets/marketplace/localai-developer-walkthrough.gif",
+      "targetPath": "images/localai-developer-walkthrough.gif"
     }
   ],
   "identity": {

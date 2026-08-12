@@ -5,6 +5,6 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("AI planning, patching, compilation and repair for Visual Studio 2022.")]
 [assembly: AssemblyCompany("LocalAI Developer")]
 [assembly: AssemblyProduct("LocalAI Developer")]
-[assembly: AssemblyVersion("1.4.0.0")]
-[assembly: AssemblyFileVersion("1.4.0.0")]
+[assembly: AssemblyVersion("1.4.1.0")]
+[assembly: AssemblyFileVersion("1.4.1.0")]
 [assembly: ComVisible(false)]
