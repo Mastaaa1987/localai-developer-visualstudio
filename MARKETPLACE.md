@@ -1,6 +1,8 @@
-# Visual Studio Marketplace release
+# AI Code Generator Marketplace release
 
 The Marketplace publisher ID is `localai-developer` and its display name is `LocalAI Developer`. The publish manifest uses the publisher ID, while the VSIX manifest uses the matching Marketplace display name. The VSIX identity ID must remain unchanged so installed versions receive updates correctly.
+
+The public source repository is `Mastaaa1987/ai-code-generator-visualstudio`. The Marketplace publisher ID and VSIX identity intentionally keep their existing values; repository and product renaming must not create a second extension identity.
 
 ## Build and test
 
@@ -20,7 +22,7 @@ The Marketplace publisher ID is `localai-developer` and its display name is `Loc
 
 3. Install the Release VSIX locally and verify provider settings, model discovery, plan creation, patch review, transaction rollback, final validation, and session reload.
 
-The local development previews used a different manifest publisher value. Uninstall an installed 1.3.x preview before testing the Marketplace-ready 1.4.1 package to avoid side-by-side identity or update conflicts.
+The local development previews used a different manifest publisher value. Uninstall an installed 1.3.x preview before testing the Marketplace-ready 1.4.2 package to avoid side-by-side identity or update conflicts.
 
 ## First private upload
 

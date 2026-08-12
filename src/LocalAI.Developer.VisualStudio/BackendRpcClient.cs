@@ -36,7 +36,7 @@ namespace LocalAI.Developer.VisualStudio
                 if (File.Exists(development)) dll = development;
             }
             if (!File.Exists(dll))
-                throw new FileNotFoundException("The LocalAI Developer backend was not included in the VSIX.", dll);
+                throw new FileNotFoundException("The AI Code Generator backend was not included in the VSIX.", dll);
 
             string dotnet = Environment.GetEnvironmentVariable("LOCALAI_DOTNET_PATH");
             if (string.IsNullOrWhiteSpace(dotnet)) dotnet = "dotnet";
@@ -55,7 +55,7 @@ namespace LocalAI.Developer.VisualStudio
             };
             process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
             process.Exited += OnExited;
-            if (!process.Start()) throw new InvalidOperationException("The LocalAI Developer backend could not be started.");
+            if (!process.Start()) throw new InvalidOperationException("The AI Code Generator backend could not be started.");
             _ = ReadOutputAsync(process.StandardOutput);
             _ = ReadErrorsAsync(process.StandardError);
             await RequestAsync("initialize", settings).ConfigureAwait(false);
@@ -64,7 +64,7 @@ namespace LocalAI.Developer.VisualStudio
         public async Task<JToken> RequestAsync(string method, JObject parameters)
         {
             if (process == null || process.HasExited)
-                throw new InvalidOperationException("The LocalAI Developer backend is not running.");
+                throw new InvalidOperationException("The AI Code Generator backend is not running.");
 
             long id = Interlocked.Increment(ref nextId);
             var completion = new TaskCompletionSource<JToken>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -130,7 +130,7 @@ namespace LocalAI.Developer.VisualStudio
 
         private void OnExited(object sender, EventArgs e)
         {
-            FailAll(new InvalidOperationException("LocalAI Developer backend exited with code " + process.ExitCode + "."));
+            FailAll(new InvalidOperationException("AI Code Generator backend exited with code " + process.ExitCode + "."));
         }
 
         private void RaiseLog(string message)

@@ -12,14 +12,14 @@
       <Button guid="guidLocalAIDeveloperCommandSet" id="OpenDeveloperCommand" priority="0x0100" type="Button">
         <Parent guid="guidLocalAIDeveloperCommandSet" id="LocalAIDeveloperGroup" />
         <Strings>
-          <ButtonText>LocalAI Developer</ButtonText>
+          <ButtonText>AI Code Generator</ButtonText>
           <LocCanonicalName>Tools.LocalAIDeveloper</LocCanonicalName>
         </Strings>
       </Button>
       <Button guid="guidLocalAIDeveloperCommandSet" id="OpenSettingsCommand" priority="0x0110" type="Button">
         <Parent guid="guidLocalAIDeveloperCommandSet" id="LocalAIDeveloperGroup" />
         <Strings>
-          <ButtonText>LocalAI Developer Settings</ButtonText>
+          <ButtonText>AI Code Generator Settings</ButtonText>
           <LocCanonicalName>Tools.LocalAIDeveloperSettings</LocCanonicalName>
         </Strings>
       </Button>

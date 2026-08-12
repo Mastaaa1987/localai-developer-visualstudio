@@ -1,15 +1,15 @@
-# LocalAI Developer for Visual Studio 2022
+# AI Code Generator for Visual Studio 2022
 
-![LocalAI Developer logo](assets/marketplace/localai-developer-logo-1024.png)
+![AI Code Generator logo](assets/marketplace/ai-code-generator-logo-1024.png)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 [![Visual Studio 2022](https://img.shields.io/badge/Visual%20Studio-2022-5C2D91.svg)](https://marketplace.visualstudio.com/)
 
-LocalAI Developer is a Visual Studio 2022 extension for AI-assisted software development with local or remote language models. It turns a development goal into a reviewable plan, generates one patch at a time, validates C# with Roslyn, builds the solution once at the end of the workflow, and can request bounded repair patches when compilation fails.
+Use AI to generate plans and patches for your entire project, simply via a prompt. AI Code Generator is a Visual Studio 2022 extension for AI-assisted software development with local or remote language models. It turns a development goal into a reviewable plan, generates one patch at a time, validates C# with Roslyn, builds the solution once at the end of the workflow, and can request bounded repair patches when compilation fails.
 
 The extension supports English and German and follows the active Visual Studio color theme.
 
-![LocalAI Developer quick-start workflow](assets/marketplace/localai-developer-walkthrough.gif)
+![AI Code Generator quick-start workflow](assets/marketplace/ai-code-generator-walkthrough.gif)
 
 ## Features
 
@@ -36,7 +36,7 @@ The extension supports English and German and follows the active Visual Studio c
 - Mistral
 - OpenAI
 
-The provider interface is intentionally transport-agnostic. Custom OpenAI-compatible endpoints can be added directly under **Tools > LocalAI Developer Settings** without changing the workflow coordinators.
+The provider interface is intentionally transport-agnostic. Custom OpenAI-compatible endpoints can be added directly under **Tools > AI Code Generator Settings** without changing the workflow coordinators.
 
 ## Architecture
 
@@ -45,7 +45,7 @@ Visual Studio 2022 VSIX (.NET Framework 4.7.2 / WPF)
         |
         | JSON-RPC over stdin/stdout
         v
-LocalAI Developer Backend (.NET 8)
+AI Code Generator Backend (.NET 8)
         |
         +-- Planning and plan validation
         +-- Patch preparation and approval policy
@@ -81,7 +81,7 @@ request as omitted, so the model can request a narrower follow-up step.
 External validation commands are selected by registered backends. Model output
 can never provide an executable or arbitrary command-line arguments.
 If an optional interpreter cannot start or does not finish its syntax check
-within the validator timeout, LocalAI Developer falls back to deterministic
+within the validator timeout, AI Code Generator falls back to deterministic
 structural validation. An internal validator timeout is not treated as a user
 cancellation and cannot mark an unapplied patch as retained.
 Windows App Execution Alias messages such as "Python was not found" are treated
@@ -95,7 +95,7 @@ src/
   LocalAI.Developer.Backend/        .NET 8 workflow backend
 tests/
   LocalAI.Developer.Backend.Tests/  End-to-end and component tests
-LocalAI.Developer.sln
+AI.Code.Generator.sln
 ```
 
 ## Requirements
@@ -110,7 +110,7 @@ LocalAI.Developer.sln
 ## Build
 
 1. Clone the repository.
-2. Open `LocalAI.Developer.sln` in Visual Studio 2022.
+2. Open `AI.Code.Generator.sln` in Visual Studio 2022.
 3. Build `LocalAI.Developer.VisualStudio` in Debug or Release.
 
 The VSIX build publishes the .NET 8 backend and embeds it under `Backend/` inside the extension package.
@@ -134,7 +134,7 @@ dotnet run --project .\tests\LocalAI.Developer.Backend.Tests\LocalAI.Developer.B
 1. Set `LocalAI.Developer.VisualStudio` as the startup project.
 2. Press `F5`.
 3. Open a solution in the Visual Studio Experimental Instance.
-4. Choose **Tools > LocalAI Developer**.
+4. Choose **Tools > AI Code Generator**.
 
 ## Install
 
@@ -144,15 +144,15 @@ Build the VSIX, close all Visual Studio instances, and open:
 src/LocalAI.Developer.VisualStudio/bin/Release/LocalAI.Developer.VisualStudio.vsix
 ```
 
-Restart Visual Studio and open **Tools > LocalAI Developer**.
+Restart Visual Studio and open **Tools > AI Code Generator**.
 
 Marketplace publication metadata is included in [vs-publish.json](vs-publish.json). The first upload is configured as a private listing so it can be verified before public release; see [MARKETPLACE.md](MARKETPLACE.md).
 
 ## Configuration
 
-Open **Tools > LocalAI Developer Settings** to configure provider URLs, models, API keys, language, approval mode, timeouts, and Git policy. Use **Load models** beside the editable model dropdown to discover models from the selected provider. The same dialog lets you add, rename, and remove custom providers. API keys are protected with Windows DPAPI for the current user.
+Open **Tools > AI Code Generator Settings** to configure provider URLs, models, API keys, language, approval mode, timeouts, and Git policy. Use **Load models** beside the editable model dropdown to discover models from the selected provider. The same dialog lets you add, rename, and remove custom providers. API keys are protected with Windows DPAPI for the current user.
 
-The main **LocalAI Developer** window deliberately exposes only the active provider selector. Selecting another provider stores it as the active profile; connection details remain centralized in the settings dialog.
+The main **AI Code Generator** window deliberately exposes only the active provider selector. Selecting another provider stores it as the active profile; connection details remain centralized in the settings dialog.
 
 Environment variables:
 
@@ -173,16 +173,16 @@ Environment variables:
 
 ## Localization
 
-English and German are included. Select the language under **Tools > LocalAI Developer Settings**. Compiler output and provider error payloads remain unchanged so diagnostic text is not corrupted by translation.
+English and German are included. Select the language under **Tools > AI Code Generator Settings**. Compiler output and provider error payloads remain unchanged so diagnostic text is not corrupted by translation.
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and pull-request checklist.
 
-Security and privacy concerns can be reported through the [GitHub issue tracker](https://github.com/Mastaaa1987/localai-developer-visualstudio/issues). See [PRIVACY.md](PRIVACY.md) for details about project context, provider requests, credentials, and local session storage.
+Security and privacy concerns can be reported through the [GitHub issue tracker](https://github.com/Mastaaa1987/ai-code-generator-visualstudio/issues). See [PRIVACY.md](PRIVACY.md) for details about project context, provider requests, credentials, and local session storage.
 
 ## License
 
-LocalAI Developer is licensed under the [MIT License](LICENSE.txt).
+AI Code Generator is licensed under the [MIT License](LICENSE.txt).
 Third-party components retain their respective licenses; see
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

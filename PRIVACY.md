@@ -1,6 +1,6 @@
 # Privacy Statement
 
-LocalAI Developer does not intentionally collect telemetry, analytics, or usage data.
+AI Code Generator does not intentionally collect telemetry, analytics, or usage data.
 
 ## Data processed by the extension
 
@@ -22,4 +22,4 @@ Optional Git push and GitHub pull-request operations run only after explicit use
 
 ## Contact
 
-Questions and privacy reports can be submitted through the project's [GitHub issue tracker](https://github.com/Mastaaa1987/localai-developer-visualstudio/issues).
+Questions and privacy reports can be submitted through the project's [GitHub issue tracker](https://github.com/Mastaaa1987/ai-code-generator-visualstudio/issues).

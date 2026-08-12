@@ -7,12 +7,12 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 SOURCE = Path(r"D:\Bandicam.7.1.3.2456.x64.Portable\Screenshots")
-OUTPUT = Path(__file__).resolve().parents[1] / "assets" / "marketplace" / "localai-developer-walkthrough.gif"
+OUTPUT = Path(__file__).resolve().parents[1] / "assets" / "marketplace" / "ai-code-generator-walkthrough.gif"
 
 FRAMES = [
-    ("bandicam 2026-08-12 02-14-23-716.jpg", "Open Tools > LocalAI Developer Settings"),
+    ("bandicam 2026-08-12 02-14-23-716.jpg", "Open Tools > AI Code Generator Settings"),
     ("bandicam 2026-08-12 02-14-38-875.jpg", "Configure language, approval policy, and your AI provider"),
-    ("bandicam 2026-08-12 02-15-24-028.jpg", "Open Tools > LocalAI Developer"),
+    ("bandicam 2026-08-12 02-15-24-028.jpg", "Open Tools > AI Code Generator"),
     ("bandicam 2026-08-12 02-16-30-006.jpg", "Connect the backend to the active solution"),
     ("bandicam 2026-08-12 02-17-10-050.jpg", "Enter a clear development goal"),
     ("bandicam 2026-08-12 02-17-12-142.jpg", "Create a structured development plan"),
@@ -61,7 +61,7 @@ def render_frame(path: Path, caption: str, index: int, total: int) -> Image.Imag
     draw.rectangle((0, SCREEN_HEIGHT, 6, canvas.height), fill=CYAN)
     draw.text(
         (24, SCREEN_HEIGHT + 13),
-        f"LOCALAI DEVELOPER  /  QUICK START  /  STEP {index + 1:02d}",
+        f"AI CODE GENERATOR  /  QUICK START  /  STEP {index + 1:02d}",
         font=font(12, bold=True),
         fill=MUTED,
     )

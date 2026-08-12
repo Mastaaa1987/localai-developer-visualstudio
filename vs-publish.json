@@ -7,11 +7,11 @@
   "assetFiles": [
     {
       "pathOnDisk": "src/LocalAI.Developer.VisualStudio/Resources/ExtensionIcon.png",
-      "targetPath": "images/localai-developer-logo.png"
+      "targetPath": "images/ai-code-generator-logo.png"
     },
     {
-      "pathOnDisk": "assets/marketplace/localai-developer-walkthrough.gif",
-      "targetPath": "images/localai-developer-walkthrough.gif"
+      "pathOnDisk": "assets/marketplace/ai-code-generator-walkthrough.gif",
+      "targetPath": "images/ai-code-generator-walkthrough.gif"
     }
   ],
   "identity": {
@@ -22,5 +22,5 @@
   "publisher": "localai-developer",
   "private": true,
   "qna": true,
-  "repo": "https://github.com/Mastaaa1987/localai-developer-visualstudio"
+  "repo": "https://github.com/Mastaaa1987/ai-code-generator-visualstudio"
 }

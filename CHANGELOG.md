@@ -1,6 +1,12 @@
 # Changelog
 
-All notable changes to LocalAI Developer are documented in this file.
+All notable changes to AI Code Generator are documented in this file.
+
+## 1.4.2 - 2026-08-12
+
+- Renamed the user-facing product from LocalAI Developer to AI Code Generator.
+- Updated the Marketplace title and short description.
+- Preserved the publisher, internal name, VSIX identity, storage, and technical namespaces for seamless updates and session compatibility.
 
 ## 1.4.1 - 2026-08-12
 

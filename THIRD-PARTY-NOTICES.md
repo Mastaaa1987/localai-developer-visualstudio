@@ -1,8 +1,8 @@
 # Third-Party Notices
 
-LocalAI Developer uses the following third-party components. Their licenses
-apply only to those components and do not replace the MIT License for LocalAI
-Developer.
+AI Code Generator uses the following third-party components. Their licenses
+apply only to those components and do not replace the MIT License for AI Code
+Generator.
 
 ## Microsoft.CodeAnalysis.CSharp (Roslyn)
 

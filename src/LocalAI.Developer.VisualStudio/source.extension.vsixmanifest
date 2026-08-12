@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="LocalAI.Developer.VisualStudio2022.9038b419-2b70-4c66-9728-d8ce5506eab1" Version="1.4.1" Language="en-US" Publisher="LocalAI Developer" />
-    <DisplayName>LocalAI Developer for Visual Studio 2022</DisplayName>
-    <Description xml:space="preserve">AI-assisted planning, patch review, compilation, repair, sessions and Git workflows for Visual Studio 2022.</Description>
-    <MoreInfo>https://github.com/Mastaaa1987/localai-developer-visualstudio</MoreInfo>
+    <Identity Id="LocalAI.Developer.VisualStudio2022.9038b419-2b70-4c66-9728-d8ce5506eab1" Version="1.4.2" Language="en-US" Publisher="LocalAI Developer" />
+    <DisplayName>AI Code Generator</DisplayName>
+    <Description xml:space="preserve">Use AI to generate plans and patches for your entire project, simply via a prompt.</Description>
+    <MoreInfo>https://github.com/Mastaaa1987/ai-code-generator-visualstudio</MoreInfo>
     <License>LICENSE.txt</License>
-    <ReleaseNotes>https://github.com/Mastaaa1987/localai-developer-visualstudio/blob/main/CHANGELOG.md</ReleaseNotes>
+    <ReleaseNotes>https://github.com/Mastaaa1987/ai-code-generator-visualstudio/blob/main/CHANGELOG.md</ReleaseNotes>
     <Icon>Resources\ExtensionIcon.png</Icon>
     <Tags>Local AI, Visual Studio, Roslyn, Developer, Patch, LM Studio, Ollama, Mistral, OpenAI</Tags>
   </Metadata>

@@ -12,7 +12,7 @@ namespace LocalAI.Developer.VisualStudio
         private static readonly Dictionary<string, string[]> Values =
             new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
             {
-                ["ProductName"] = Pair("LocalAI Developer", "LocalAI Developer"),
+                ["ProductName"] = Pair("AI Code Generator", "AI Code Generator"),
                 ["Language"] = Pair("Language", "Sprache"),
                 ["Workspace"] = Pair("Workspace", "Arbeitsordner"),
                 ["Provider"] = Pair("Provider", "Provider"),
@@ -58,7 +58,7 @@ namespace LocalAI.Developer.VisualStudio
                     "Visual-Studio-Projektmappe (*.sln;*.slnx)|*.sln;*.slnx|Alle Dateien (*.*)|*.*"),
                 ["Apply"] = Pair("Apply", "Anwenden"),
                 ["Skip"] = Pair("Skip", "Überspringen"),
-                ["PatchApproval"] = Pair("LocalAI patch approval", "LocalAI Patch-Freigabe"),
+                ["PatchApproval"] = Pair("AI Code Generator patch approval", "AI Code Generator Patch-Freigabe"),
                 ["AllFiles"] = Pair("ALL FILES", "ALLE DATEIEN"),
                 ["LineDiff"] = Pair("Line diff", "Zeilen-Diff"),
                 ["Risk"] = Pair("Risk", "Risiko"),
@@ -92,7 +92,7 @@ namespace LocalAI.Developer.VisualStudio
                 ,["TransactionCreated"] = Pair("Created", "Erstellt")
                 ,["PathOutsideWorkspace"] = Pair("The transaction path is outside the workspace.", "Der Transaktionspfad liegt außerhalb des Arbeitsordners.")
                 ,["TimeoutRange"] = Pair("The model timeout must be between 30 and 3600 seconds.", "Das Modell-Timeout muss zwischen 30 und 3600 Sekunden liegen.")
-                ,["SettingsTitle"] = Pair("LocalAI Developer Settings", "LocalAI Developer Einstellungen")
+                ,["SettingsTitle"] = Pair("AI Code Generator Settings", "AI Code Generator Einstellungen")
                 ,["GeneralSettings"] = Pair("General", "Allgemein")
                 ,["ProviderSettings"] = Pair("Connection and providers", "Verbindung und Provider")
                 ,["SaveSettings"] = Pair("Save settings", "Einstellungen speichern")

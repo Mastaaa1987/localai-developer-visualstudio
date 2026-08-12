@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for contributing to LocalAI Developer.
+Thank you for contributing to AI Code Generator.
 
 ## Development Workflow
 

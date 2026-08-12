@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Shell;
 namespace LocalAI.Developer.VisualStudio
 {
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
-    [InstalledProductRegistration("LocalAI Developer", "Local and remote AI planning, patching, compilation and repair", "1.4.1")]
+    [InstalledProductRegistration("AI Code Generator", "Use AI to generate plans and patches for your entire project, simply via a prompt.", "1.4.2")]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(DeveloperToolWindow), Style = VsDockStyle.Tabbed, Window = "{80CC9F66-E7D8-4DDD-85B6-D9E6CD0E93E2}")]
     [Guid(PackageGuidString)]
@@ -45,7 +45,7 @@ namespace LocalAI.Developer.VisualStudio
             {
                 ToolWindowPane window = await ShowToolWindowAsync(typeof(DeveloperToolWindow), 0, true, DisposalToken);
                 if (window == null)
-                    throw new NotSupportedException("LocalAI Developer tool window could not be created.");
+                    throw new NotSupportedException("AI Code Generator tool window could not be created.");
             }).FileAndForget("LocalAI/ShowDeveloperWindow");
         }
     }
